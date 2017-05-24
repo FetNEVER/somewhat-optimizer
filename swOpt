@@ -1,0 +1,348 @@
+// wtflab.cpp: определяет точку входа для консольного приложения.
+//
+#include "stdafx.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+ifstream fin("input.txt");
+ofstream fout("output.txt");
+bool error = false;
+char ch;
+
+int fIc = 0;
+char V = 'V';
+char C = 'C';
+char oR = '|';
+char anD = '&';
+char noT = '~';
+char eQ = '=';
+char fiC = '-';
+
+int res;
+int id_count = 0;
+string g_id;
+vector<string> list;
+vector<pair<int, int>> constant;
+
+struct table
+{
+	int num_pointer;
+	string p_ident;
+	char oper;
+	int op_d1;
+	int op_d2;
+	table* next;
+	table* prev;
+};
+
+table *first(int id, char type, int op1, int op2)
+{
+	table *p = new table;
+	p->p_ident = id;
+	p->oper = type;
+	p->op_d1 = op1;
+	p->op_d2 = op2;
+	p->prev = NULL;
+	return p;
+}
+
+table *add(table *p, int id, char type, int op1, int op2)
+{
+	table *m = new table;
+	p->p_ident = id;
+	p->oper = type;
+	p->op_d1 = op1;
+	p->op_d2 = op2;
+	table *q = p;
+	while (q->prev != NULL)
+		q = q->prev;
+	q->prev = m;
+	return p;
+}
+void Find_3(table *p)
+{
+	table *q = p;
+	while (q->prev->prev)
+	{
+		if (q->prev)
+	}
+}
+
+void Find_1to2(table *p, const int num)
+{
+
+	table *q = p;
+	while (q->prev->prev)
+	{
+		if (q->prev->num_pointer == num)
+		{
+			if (p->oper == noT)
+			{
+				p->op_d1 = 1 - q->prev->op_d1;
+				p->oper = C;
+			}
+			else
+			{
+				p->op_d2 = q->prev->op_d1;
+				Find_3(p);
+			}
+				table *m = q->prev;
+			q->prev = (q->prev)->prev;
+			delete m;
+		}
+		q = q->prev;
+	}
+}
+
+void Error(int i)
+{
+	switch (i)
+	{
+	case 1:
+		fout << "Ошибка: некорректный идентификатор\nОстановка разбора\n";
+		error = true;
+		break;
+	case 2:
+		fout << "Ошибка: некорректная запись выражения\nОстановка разбора\n";
+		error = true;
+		break;
+	case 3:
+		fout << "Ошибка: использован неинициализированный идентификатор\nОстановка разбора\n";
+		error = true;
+		break;
+	case 4:
+		fout << "Ошибка: некорректный оператор присваивания\nОстановка разбора\n";
+		error = true;
+		break;
+	case 5:
+		fout << "Ошибка: некорректная запись константы\nОстановка разбора\n";
+		error = true;
+		break;
+	}
+}
+
+inline void skip()
+{
+	while ((ch == ' ') || (ch == '\t') || (ch == '\n') || (ch == '\r')) ch = fin.get();
+}
+
+string K();
+
+pair<int, string> Ident()
+{
+	string id = "";
+	if ((ch >= 'a') && (ch <= 'z'))
+		id += ch;
+	else
+		Error(1);
+	ch = fin.get();
+	if ((ch == '0') || (ch == '1') || ((ch >= 'a') && (ch <= 'z')))
+		id += K();
+	else if ((ch != '|') && (ch != '&') && (ch != ':') && (ch != '='))
+	{
+		Error(1);
+		ch = fin.get();
+	}
+	if (error) return *(new pair<int, string>(id_count, id));
+	skip();
+	id_count++;
+	fout << id_count << ") V(" << id << ", -)\n";
+	return *(new pair<int, string>(id_count, id));
+}
+
+string K()
+{
+	string id_k = "";
+	id_k += ch;
+	ch = fin.get();
+	if ((ch == '0') || (ch == '1') || ((ch >= 'a') && (ch <= 'z')))
+		id_k += K();
+	skip();
+	return id_k;
+}
+
+int Const()
+{
+	bool sol = 0;
+	if (ch == '1')
+		sol = 1;
+	skip();
+	ch = fin.get();
+	if ((ch >= '0') && (ch <= '9'))
+		Error(5);
+	id_count++;
+	fout << id_count << ") C(" << sol << ", -)\n";
+	skip();
+
+	return id_count;
+}
+unsigned T();
+unsigned M();
+
+unsigned E()
+{
+	unsigned id_point;
+
+	if (ch == '|')
+	{
+		ch = fin.get();
+		skip();
+		id_point = T();
+	}
+	else
+		id_point = T();
+	if (error)
+		return 0;
+	skip();
+	if (ch == '|')
+	{
+		res = E();
+		if (error)
+			return 0;
+		id_count++;
+		fout << id_count << ") |(^" << id_point << ",^" << res << ")\n";
+		skip();
+		return id_count;
+	}
+	skip();
+	return id_point;
+}
+
+unsigned T()
+{
+	unsigned id_point;
+	if (ch == '&')
+	{
+		skip();
+		ch = fin.get();
+		id_point = M();
+	}
+	else
+		id_point = M();
+	if (error)
+		return 0;
+	skip();
+	if (ch == '&')
+	{
+		res = T();
+		if (error)
+			return 0;
+		id_count++;
+		fout << id_count << ") &(^" << id_point << ",^" << res << ")\n";
+		return id_count;
+	}
+	else
+		return id_point;
+
+}
+
+
+unsigned M()
+{
+
+	skip();
+	if (ch == '~')
+	{
+		skip();
+		ch = fin.get();
+		res = M();
+		id_count++;
+		fout << id_count << ") ~(^" << res << ", -)\n";
+		res = id_count;
+	}
+	else if ((ch >= 'a') && (ch <= 'z'))
+	{
+		pair<int, string> str = Ident();
+		res = str.first;
+		bool id_exist = false;
+		for (int i = 0; i < list.size(); i++)
+		{
+			if (list[i] == str.second)
+			{
+				id_exist = true;
+			}
+		}
+		if (!id_exist)
+		{
+			Error(3);
+			return 0;
+		}
+	}
+	else if ((ch == '0') || (ch == '1'))
+	{
+		res = Const();
+	}
+	else
+	{
+		Error(2);
+		return 0;
+	}
+	return res;
+}
+
+void S()
+{
+	pair<int, string> str = Ident();
+	if (error) return;
+	g_id = str.second;
+	if (ch != ':')
+	{
+		Error(4);
+		return;
+	}
+	else {
+		ch = fin.get();
+		if (ch != '=')
+		{
+			Error(4);
+			return;
+		}
+	}
+	ch = fin.get();
+	skip();
+	res = E();
+	if (error)
+		return;
+	bool id_exist = false;
+	for (int i = 0; i < list.size(); i++)
+	{
+		if (list[i] == g_id)
+		{
+			id_exist = true;
+		}
+	}
+	if (!id_exist)
+	{
+		string p;
+		p = g_id;
+		list.push_back(p);
+	}
+	id_count++;
+	fout << id_count << ") " << "=(^" << str.first << ",^" << res << ")\n";
+	skip();
+}
+
+int main()
+{
+	ch = fin.get();
+	skip();
+	while (!fin.eof())
+	{
+		S();
+		if (error)
+			break;
+		skip();
+	}
+	if (!error)
+		if (list.empty())
+			fout << "Переменных не объявлено\n";
+	fout.close();
+	fin.close();
+
+	return 0;
+}
+
